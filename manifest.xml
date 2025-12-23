@@ -4,7 +4,7 @@
            xsi:type="MailApp">
   
   <!-- Generate a new GUID at https://www.guidgenerator.com/ -->
-  <Id>a1b2c3d4-e5f6-7890-abcd-ef1234567890</Id>
+  <Id>331421de-d503-4060-9eb3-ffede16599fd</Id>
   <Version>1.0.0.0</Version>
   <ProviderName>Impuls Croatia</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
@@ -13,11 +13,11 @@
   
   <!-- Replace with your actual hosted icon URLs -->
   <IconUrl DefaultValue="https://vasi25.github.io/outlook_email_validator/icon-32.png"/>
-  <HighResolutionIconUrl DefaultValue="https://vasi25.github.io/outlook_email_validator/icon-64.png"/>
+  <HighResolutionIconUrl DefaultValue="https://vasi25.github.io/outlook_email_validator/icon-80.png"/>
   <SupportUrl DefaultValue="https://vasi25.github.io/outlook_email_validator"/>
   
   <AppDomains>
-    <AppDomain>vasi25.github.io/outlook_email_validator</AppDomain>
+    <AppDomain>vasi25.github.io</AppDomain>
   </AppDomains>
   
   <Hosts>

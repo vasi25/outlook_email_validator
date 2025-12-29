@@ -1,66 +1,50 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
            xsi:type="MailApp">
-  
-  <!-- Generate a new GUID at https://www.guidgenerator.com/ -->
   <Id>331421de-d503-4060-9eb3-ffede16599fd</Id>
-  <Version>1.0.0.0</Version>
-  <ProviderName>Impuls Croatia</ProviderName>
+  <Version>1.0.0.1</Version>
+  <ProviderName>RINKT</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="Email Validator"/>
   <Description DefaultValue="Validates recipient email addresses against approved list"/>
-  
-  <!-- Replace with your actual hosted icon URLs -->
-  <IconUrl DefaultValue="https://vasi25.github.io/outlook_email_validator/icon-32.png"/>
-  <HighResolutionIconUrl DefaultValue="https://vasi25.github.io/outlook_email_validator/icon-80.png"/>
-  <SupportUrl DefaultValue="https://vasi25.github.io/outlook_email_validator"/>
-  
+  <IconUrl DefaultValue="https://vasi25.github.io/outlook_email_validator/icon-64.png"/>
+  <HighResolutionIconUrl DefaultValue="https://vasi25.github.io/outlook_email_validator/icon-128.png"/>
+  <SupportUrl DefaultValue="https://github.com/vasi25/outlook_email_validator"/>
   <AppDomains>
-    <AppDomain>vasi25.github.io</AppDomain>
+    <AppDomain>https://vasi25.github.io</AppDomain>
   </AppDomains>
-  
   <Hosts>
     <Host Name="Mailbox"/>
   </Hosts>
-  
   <Requirements>
     <Sets>
       <Set Name="Mailbox" MinVersion="1.1"/>
     </Sets>
   </Requirements>
-  
   <FormSettings>
     <Form xsi:type="ItemEdit">
       <DesktopSettings>
-        <!-- Replace with your actual hosted taskpane URL -->
         <SourceLocation DefaultValue="https://vasi25.github.io/outlook_email_validator/taskpane.html"/>
-        <RequestedHeight>450</RequestedHeight>
       </DesktopSettings>
     </Form>
   </FormSettings>
-  
-  <Permissions>ReadWriteMailbox</Permissions>
-  
+  <Permissions>ReadWriteItem</Permissions>
   <Rule xsi:type="RuleCollection" Mode="Or">
     <Rule xsi:type="ItemIs" ItemType="Message" FormType="Edit"/>
-    <Rule xsi:type="ItemIs" ItemType="Message" FormType="EditOrRead"/>
   </Rule>
-  
-  <DisableEntityHighlighting>true</DisableEntityHighlighting>
-  
+  <DisableEntityHighlighting>false</DisableEntityHighlighting>
   <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides" xsi:type="VersionOverridesV1_0">
     <Requirements>
       <bt:Sets DefaultMinVersion="1.3">
         <bt:Set Name="Mailbox"/>
       </bt:Sets>
     </Requirements>
-    
     <Hosts>
       <Host xsi:type="MailHost">
         <DesktopFormFactor>
           <FunctionFile resid="Commands.Url"/>
-          
           <ExtensionPoint xsi:type="MessageComposeCommandSurface">
             <OfficeTab id="TabDefault">
               <Group id="msgComposeGroup">
@@ -86,7 +70,6 @@
         </DesktopFormFactor>
       </Host>
     </Hosts>
-    
     <Resources>
       <bt:Images>
         <bt:Image id="Icon.16x16" DefaultValue="https://vasi25.github.io/outlook_email_validator/icon-16.png"/>

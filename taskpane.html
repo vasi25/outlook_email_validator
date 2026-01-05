@@ -86,11 +86,6 @@
             background-color: #005a9e;
         }
         
-        button:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
-        }
-        
         #result {
             white-space: pre-wrap;
             background-color: #f3f2f1;
@@ -104,12 +99,6 @@
             border-radius: 2px;
         }
         
-        .loading {
-            text-align: center;
-            padding: 20px;
-            color: #605e5c;
-        }
-        
         .error {
             background-color: #fde7e9;
             border-left-color: #d13438;
@@ -120,11 +109,24 @@
             background-color: #dff6dd;
             border-left-color: #107c10;
         }
+        
+        .info-box {
+            background-color: #fff4ce;
+            border-left: 4px solid #ffb900;
+            padding: 10px;
+            margin-bottom: 15px;
+            font-size: 12px;
+            border-radius: 2px;
+        }
     </style>
 </head>
 <body>
     <div class="header">
         <h2>📧 Email Validator<span class="status-badge status-live">● LIVE</span></h2>
+    </div>
+    
+    <div class="info-box">
+        💡 <strong>Info:</strong> Invalid emails will show a warning banner at the top of your email.
     </div>
     
     <section>
@@ -140,10 +142,11 @@
     <script>
         let checkInterval;
         let lastRecipientCount = -1;
+        const NOTIFICATION_KEY = "emailValidatorWarning";
         
         // Initialize Office.js
         Office.onReady(function(info) {
-            console.log('Office.js initialized - Auto-validation enabled');
+            console.log('Office.js initialized - Auto-validation with notifications enabled');
             
             // Manual refresh button
             document.getElementById("run").addEventListener("click", function() {
@@ -192,11 +195,14 @@
                         lastRecipientCount = recipients.length;
                         
                         let output = "";
-                        let hasInvalid = false;
+                        let invalidEmails = [];
                         
                         if (recipients.length === 0) {
                             output = "⚠️  No recipients entered yet.\n\nPlease add email addresses to the 'To' field.";
                             resultDiv.className = "";
+                            
+                            // Remove notification if no recipients
+                            removeNotification();
                         } else {
                             output = "📋 Live Verification:\n";
                             output += "─────────────────────────────\n\n";
@@ -210,7 +216,7 @@
                                 } else {
                                     output += "❌ NOT VERIFIED\n";
                                     output += "   " + email + "\n\n";
-                                    hasInvalid = true;
+                                    invalidEmails.push(email);
                                 }
                             });
                             
@@ -220,14 +226,20 @@
                             const now = new Date();
                             const timeStr = now.toLocaleTimeString();
                             
-                            if (hasInvalid) {
-                                output += "\n\n⚠️  Warning: Some recipients are not verified!";
+                            if (invalidEmails.length > 0) {
+                                output += "\n\n⚠️  Warning: " + invalidEmails.length + " recipient(s) not verified!";
                                 output += "\n\nLast checked: " + timeStr;
                                 resultDiv.className = "error";
+                                
+                                // Show notification banner
+                                showNotification(invalidEmails);
                             } else {
                                 output += "\n\n✓ All recipients verified!";
                                 output += "\n\nLast checked: " + timeStr;
                                 resultDiv.className = "success";
+                                
+                                // Remove notification if all valid
+                                removeNotification();
                             }
                         }
                         
@@ -242,6 +254,39 @@
                 resultDiv.className = "error";
                 resultDiv.innerText = "❌ Error:\n\n" + error.message;
             }
+        }
+        
+        function showNotification(invalidEmails) {
+            const emailList = invalidEmails.join(", ");
+            const message = "⚠️ Unverified recipients: " + emailList;
+            
+            // Add information bar notification
+            Office.context.mailbox.item.notificationMessages.addAsync(
+                NOTIFICATION_KEY,
+                {
+                    type: "informationalMessage",
+                    message: message,
+                    icon: "icon1",
+                    persistent: false
+                },
+                function(asyncResult) {
+                    if (asyncResult.status === Office.AsyncResultStatus.Failed) {
+                        console.error("Failed to add notification: " + asyncResult.error.message);
+                    }
+                }
+            );
+        }
+        
+        function removeNotification() {
+            // Remove the notification
+            Office.context.mailbox.item.notificationMessages.removeAsync(
+                NOTIFICATION_KEY,
+                function(asyncResult) {
+                    if (asyncResult.status === Office.AsyncResultStatus.Failed) {
+                        console.error("Failed to remove notification: " + asyncResult.error.message);
+                    }
+                }
+            );
         }
     </script>
 </body>

@@ -259,8 +259,7 @@
             const emailList = invalidEmails.join(", ");
             const message = "⚠️ Unverified recipients: " + emailList;
             
-            // Add information bar notification
-            Office.context.mailbox.item.notificationMessages.addAsync(
+            Office.context.mailbox.item.notificationMessages.replaceAsync(
                 NOTIFICATION_KEY,
                 {
                     type: "informationalMessage",
@@ -270,7 +269,7 @@
                 },
                 function(asyncResult) {
                     if (asyncResult.status === Office.AsyncResultStatus.Failed) {
-                        console.error("Failed to add notification: " + asyncResult.error.message);
+                        console.error("Failed to update notification: " + asyncResult.error.message);
                     }
                 }
             );
@@ -282,7 +281,8 @@
                 NOTIFICATION_KEY,
                 function(asyncResult) {
                     if (asyncResult.status === Office.AsyncResultStatus.Failed) {
-                        console.error("Failed to remove notification: " + asyncResult.error.message);
+                        // Ignore error if notification doesn't exist
+                        console.log("Notification already removed or doesn't exist");
                     }
                 }
             );

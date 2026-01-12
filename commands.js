@@ -37,9 +37,8 @@ function checkRecipients() {
         
         // Hardcoded database for now - REPLACE WITH API CALL LATER
         const validEmails = [
-            "[email protected]",
-            "[email protected]",
-            "[email protected]"
+            "alexvasilescu25@gmail.com",
+            "vasilescualex25@gmail.com",
         ];
         
         // Get recipients from "To" field

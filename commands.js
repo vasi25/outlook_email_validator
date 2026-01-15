@@ -36,51 +36,98 @@ function checkRecipients() {
         // const validEmails = data.emails;
         
         // Hardcoded database for now - REPLACE WITH API CALL LATER
-        const validEmails = [
-            "alexvasilescu25@gmail.com",
-            "vasilescualex25@gmail.com",
-        ];
+        // const validEmails = [
+        //     "alexvasilescu25@gmail.com",
+        //     "vasilescualex25@gmail.com",
+        // ];
         
-        // Get recipients from "To" field
-        Office.context.mailbox.item.to.getAsync(function(result) {
-            if (result.status === Office.AsyncResultStatus.Succeeded) {
-                const recipients = result.value;
-                let invalidEmails = [];
+        // // Get recipients from "To" field
+        // Office.context.mailbox.item.to.getAsync(function(result) {
+        //     if (result.status === Office.AsyncResultStatus.Succeeded) {
+        //         const recipients = result.value;
+        //         let invalidEmails = [];
                 
-                if (recipients.length === 0) {
-                    // No recipients - remove notification
-                    removeNotification(NOTIFICATION_KEY);
-                } else {
-                    // Check each recipient
-                    recipients.forEach(function(recipient) {
-                        const email = recipient.emailAddress.toLowerCase();
+        //         if (recipients.length === 0) {
+        //             // No recipients - remove notification
+        //             removeNotification(NOTIFICATION_KEY);
+        //         } else {
+        //             // Check each recipient
+        //             recipients.forEach(function(recipient) {
+        //                 const email = recipient.emailAddress.toLowerCase();
                         
-                        if (!validEmails.includes(email)) {
-                            invalidEmails.push(email);
-                        }
-                    });
+        //                 if (!validEmails.includes(email)) {
+        //                     invalidEmails.push(email);
+        //                 }
+        //             });
                     
-                    if (invalidEmails.length > 0) {
-                        // Show notification for invalid emails
-                        const emailList = invalidEmails.join(", ");
-                        const message = "⚠️ Unverified recipients: " + emailList;
+        //             if (invalidEmails.length > 0) {
+        //                 // Show notification for invalid emails
+        //                 const emailList = invalidEmails.join(", ");
+        //                 const message = "⚠️ Unverified recipients: " + emailList;
                         
-                        Office.context.mailbox.item.notificationMessages.replaceAsync(
-                            NOTIFICATION_KEY,
-                            {
-                                type: "informationalMessage",
-                                message: message,
-                                icon: "icon1",
-                                persistent: false
+        //                 Office.context.mailbox.item.notificationMessages.replaceAsync(
+        //                     NOTIFICATION_KEY,
+        //                     {
+        //                         type: "informationalMessage",
+        //                         message: message,
+        //                         icon: "icon1",
+        //                         persistent: false
+        //                     }
+        //                 );
+        //             } else {
+        //                 // All valid - remove notification
+        //                 removeNotification(NOTIFICATION_KEY);
+        //             }
+        //         }
+        //     }
+        // });
+        fetch('http://localhost:8000/api/email/list')
+            .then(response => response.json())
+            .then(validEmails => {
+                // validEmails is now the array from your API
+                console.log('Fetched emails from API:', validEmails);
+                
+                // Get recipients from "To" field
+                Office.context.mailbox.item.to.getAsync(function(result) {
+                    if (result.status === Office.AsyncResultStatus.Succeeded) {
+                        const recipients = result.value;
+                        let invalidEmails = [];
+                        
+                        if (recipients.length === 0) {
+                            // No recipients - remove notification
+                            removeNotification(NOTIFICATION_KEY);
+                        } else {
+                            // Check each recipient
+                            recipients.forEach(function(recipient) {
+                                const email = recipient.emailAddress.toLowerCase();
+                                
+                                if (!validEmails.includes(email)) {
+                                    invalidEmails.push(email);
+                                }
+                            });
+                            
+                            if (invalidEmails.length > 0) {
+                                // Show notification for invalid emails
+                                const emailList = invalidEmails.join(", ");
+                                const message = "⚠️ Unverified recipients: " + emailList;
+                                
+                                Office.context.mailbox.item.notificationMessages.replaceAsync(
+                                    NOTIFICATION_KEY,
+                                    {
+                                        type: "informationalMessage",
+                                        message: message,
+                                        icon: "icon1",
+                                        persistent: false
+                                    }
+                                );
+                            } else {
+                                // All valid - remove notification
+                                removeNotification(NOTIFICATION_KEY);
                             }
-                        );
-                    } else {
-                        // All valid - remove notification
-                        removeNotification(NOTIFICATION_KEY);
+                        }
                     }
-                }
-            }
-        });
+                });
+            })
     } catch (error) {
         console.error('Validation error:', error);
     }

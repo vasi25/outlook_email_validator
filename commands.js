@@ -82,7 +82,12 @@ function checkRecipients() {
         //     }
         // });
         // fetch('http://localhost:8000/api/email/list')
-        fetch('https://vasiemailvalidator.loca.lt/api/email/list')
+        fetch('https://vasiemailvalidator.loca.lt/api/email/list', {
+            headers: {
+                'bypass-tunnel-reminder': 'true',
+                'User-Agent': 'OutlookEmailValidator/1.0'
+            }
+        })
             .then(response => response.json())
             .then(validEmails => {
                 // validEmails is now the array from your API

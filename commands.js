@@ -82,7 +82,7 @@ function checkRecipients() {
         //     }
         // });
         // fetch('http://localhost:8000/api/email/list')
-        fetch('https://tired-sloths-cross.loca.lt')
+        fetch('https://vasiemailvalidator.loca.lt')
             .then(response => response.json())
             .then(validEmails => {
                 // validEmails is now the array from your API

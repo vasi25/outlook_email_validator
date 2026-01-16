@@ -82,7 +82,7 @@ function checkRecipients() {
         //     }
         // });
         // fetch('http://localhost:8000/api/email/list')
-        fetch('https://vasiemailvalidator.loca.lt/api/email/list', {
+        fetch('http://vasiemail.loca.lt:8000/api/email/list', {
             headers: {
                 'bypass-tunnel-reminder': 'true',
                 'User-Agent': 'OutlookEmailValidator/1.0'

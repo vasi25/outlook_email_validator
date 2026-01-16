@@ -82,15 +82,14 @@ function checkRecipients() {
         //     }
         // });
         // fetch('http://localhost:8000/api/email/list')
-        fetch('http://vasiemail.loca.lt:8000/api/email/list', {
-            headers: {
-                'bypass-tunnel-reminder': 'true',
-                'User-Agent': 'OutlookEmailValidator/1.0'
-            }
-        })
-            .then(response => response.json())
+         fetch('http://localhost:8000/api/email/list')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('API request failed');
+                }
+                return response.json();
+            })
             .then(validEmails => {
-                // validEmails is now the array from your API
                 console.log('Fetched emails from API:', validEmails);
                 
                 // Get recipients from "To" field
@@ -100,10 +99,8 @@ function checkRecipients() {
                         let invalidEmails = [];
                         
                         if (recipients.length === 0) {
-                            // No recipients - remove notification
                             removeNotification(NOTIFICATION_KEY);
                         } else {
-                            // Check each recipient
                             recipients.forEach(function(recipient) {
                                 const email = recipient.emailAddress.toLowerCase();
                                 
@@ -113,7 +110,6 @@ function checkRecipients() {
                             });
                             
                             if (invalidEmails.length > 0) {
-                                // Show notification for invalid emails
                                 const emailList = invalidEmails.join(", ");
                                 const message = "⚠️ Unverified recipients: " + emailList;
                                 
@@ -127,13 +123,18 @@ function checkRecipients() {
                                     }
                                 );
                             } else {
-                                // All valid - remove notification
                                 removeNotification(NOTIFICATION_KEY);
                             }
                         }
                     }
                 });
             })
+            .catch(error => {
+                // NO FALLBACK! Just log and do nothing
+                console.error('API not available:', error);
+                // Add-in will simply not show any warnings
+            });
+        
     } catch (error) {
         console.error('Validation error:', error);
     }

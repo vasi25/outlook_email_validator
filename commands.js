@@ -28,107 +28,57 @@ function startAutoValidation() {
 
 function checkRecipients() {
     const NOTIFICATION_KEY = "emailValidatorWarning";
-    
+
     try {
-        // Hardcoded database for now - REPLACE WITH API CALL LATER
-        const validEmails = [
-            "alexvasilescu25@gmail.com",
-            "vasilescualex25@gmail.com",
-        ];
-        
-        // Get recipients from "To" field
-        Office.context.mailbox.item.to.getAsync(function(result) {
-            if (result.status === Office.AsyncResultStatus.Succeeded) {
-                const recipients = result.value;
-                let invalidEmails = [];
-                
-                if (recipients.length === 0) {
-                    // No recipients - remove notification
-                    removeNotification(NOTIFICATION_KEY);
-                } else {
-                    // Check each recipient
-                    recipients.forEach(function(recipient) {
-                        const email = recipient.emailAddress.toLowerCase();
-                        
-                        if (!validEmails.includes(email)) {
-                            invalidEmails.push(email);
-                        }
-                    });
-                    
-                    if (invalidEmails.length > 0) {
-                        // Show notification for invalid emails
-                        const emailList = invalidEmails.join(", ");
-                        const message = "⚠️ Unverified recipients: " + emailList;
-                        
-                        Office.context.mailbox.item.notificationMessages.replaceAsync(
-                            NOTIFICATION_KEY,
-                            {
-                                type: "informationalMessage",
-                                message: message,
-                                icon: "icon1",
-                                persistent: false
+        fetch('https://vasilocaladdin:3000/api/email/list')
+            .then(response => response.json())
+            .then(emailData => {
+                // Get recipients from "To" field
+                Office.context.mailbox.item.to.getAsync(function(result) {
+                    if (result.status === Office.AsyncResultStatus.Succeeded) {
+                        const recipients = result.value;
+                        let verifiedParts = [];
+                        let invalidEmails = [];
+
+                        if (recipients.length === 0) {
+                            removeNotification(NOTIFICATION_KEY);
+                        } else {
+                            recipients.forEach(function(recipient) {
+                                const email = recipient.emailAddress.toLowerCase();
+
+                                if (emailData[email]) {
+                                    verifiedParts.push(email + ": " + emailData[email].join(", "));
+                                } else {
+                                    invalidEmails.push(email);
+                                }
+                            });
+
+                            if (invalidEmails.length > 0) {
+                                var messageParts = [];
+                                if (verifiedParts.length > 0) {
+                                    messageParts.push(verifiedParts.join(" | "));
+                                }
+                                messageParts.push("⚠️ Unverified recipients: " + invalidEmails.join(", "));
+
+                                Office.context.mailbox.item.notificationMessages.replaceAsync(
+                                    NOTIFICATION_KEY,
+                                    {
+                                        type: "informationalMessage",
+                                        message: messageParts.join(" | "),
+                                        icon: "icon1",
+                                        persistent: false
+                                    }
+                                );
+                            } else {
+                                removeNotification(NOTIFICATION_KEY);
                             }
-                        );
-                    } else {
-                        // All valid - remove notification
-                        removeNotification(NOTIFICATION_KEY);
+                        }
                     }
-                }
-            }
-        });
-        // fetch('http://localhost:8000/api/email/list')
-    //     fetch('http://vasiemail.loca.lt:8000/api/email/list', {
-    //         headers: {
-    //             'bypass-tunnel-reminder': 'true',
-    //             'User-Agent': 'OutlookEmailValidator/1.0'
-    //         }
-    //     })
-    //         .then(response => response.json())
-    //         .then(validEmails => {
-    //             // validEmails is now the array from your API
-    //             console.log('Fetched emails from API:', validEmails);
-                
-    //             // Get recipients from "To" field
-    //             Office.context.mailbox.item.to.getAsync(function(result) {
-    //                 if (result.status === Office.AsyncResultStatus.Succeeded) {
-    //                     const recipients = result.value;
-    //                     let invalidEmails = [];
-                        
-    //                     if (recipients.length === 0) {
-    //                         // No recipients - remove notification
-    //                         removeNotification(NOTIFICATION_KEY);
-    //                     } else {
-    //                         // Check each recipient
-    //                         recipients.forEach(function(recipient) {
-    //                             const email = recipient.emailAddress.toLowerCase();
-                                
-    //                             if (!validEmails.includes(email)) {
-    //                                 invalidEmails.push(email);
-    //                             }
-    //                         });
-                            
-    //                         if (invalidEmails.length > 0) {
-    //                             // Show notification for invalid emails
-    //                             const emailList = invalidEmails.join(", ");
-    //                             const message = "⚠️ Unverified recipients: " + emailList;
-                                
-    //                             Office.context.mailbox.item.notificationMessages.replaceAsync(
-    //                                 NOTIFICATION_KEY,
-    //                                 {
-    //                                     type: "informationalMessage",
-    //                                     message: message,
-    //                                     icon: "icon1",
-    //                                     persistent: false
-    //                                 }
-    //                             );
-    //                         } else {
-    //                             // All valid - remove notification
-    //                             removeNotification(NOTIFICATION_KEY);
-    //                         }
-    //                     }
-    //                 }
-    //             });
-    //         })
+                });
+            })
+            .catch(error => {
+                console.error('Failed to fetch valid emails:', error);
+            });
     } catch (error) {
         console.error('Validation error:', error);
     }

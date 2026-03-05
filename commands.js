@@ -53,25 +53,23 @@ function checkRecipients() {
                                 }
                             });
 
-                            if (invalidEmails.length > 0) {
-                                var messageParts = [];
-                                if (verifiedParts.length > 0) {
-                                    messageParts.push(verifiedParts.join(" | "));
-                                }
-                                messageParts.push("⚠️ Unverified recipients: " + invalidEmails.join(", "));
-
-                                Office.context.mailbox.item.notificationMessages.replaceAsync(
-                                    NOTIFICATION_KEY,
-                                    {
-                                        type: "informationalMessage",
-                                        message: messageParts.join(" | "),
-                                        icon: "icon1",
-                                        persistent: false
-                                    }
-                                );
-                            } else {
-                                removeNotification(NOTIFICATION_KEY);
+                            var messageParts = [];
+                            if (verifiedParts.length > 0) {
+                                messageParts.push(verifiedParts.join("\n"));
                             }
+                            if (invalidEmails.length > 0) {
+                                messageParts.push("⚠️ Unverified recipients: " + invalidEmails.join(", "));
+                            }
+
+                            Office.context.mailbox.item.notificationMessages.replaceAsync(
+                                NOTIFICATION_KEY,
+                                {
+                                    type: "informationalMessage",
+                                    message: messageParts.join("\n"),
+                                    icon: "icon1",
+                                    persistent: false
+                                }
+                            );
                         }
                     }
                 });

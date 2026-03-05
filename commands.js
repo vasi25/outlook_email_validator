@@ -54,17 +54,22 @@ function checkRecipients() {
                                 }
                             });
 
-                            var messageParts = [];
-                            if (verifiedParts.length > 0) {
-                                messageParts.push("✅ " + verifiedParts.join(" | "));
-                            }
-                            if (invalidEmails.length > 0) {
-                                messageParts.push("⚠️ Unverified: " + invalidEmails.join(", "));
-                            }
+                            var unverifiedStr = invalidEmails.length > 0 ? "⚠️ Unverified: " + invalidEmails.join(", ") : "";
+                            var message;
 
-                            var message = messageParts.join(" | ");
-                            if (message.length > 150) {
-                                message = message.substring(0, 147) + "...";
+                            if (verifiedParts.length === 0) {
+                                message = unverifiedStr;
+                            } else if (!unverifiedStr) {
+                                var full = "✅ " + verifiedParts.join(" | ");
+                                message = full.length > 150 ? full.substring(0, 147) + "..." : full;
+                            } else {
+                                // Unverified has priority — fit verified in remaining space
+                                var maxVerified = 150 - unverifiedStr.length - 3; // 3 for " | "
+                                var verifiedFull = "✅ " + verifiedParts.join(" | ");
+                                var verifiedSection = maxVerified > 0
+                                    ? (verifiedFull.length <= maxVerified ? verifiedFull : verifiedFull.substring(0, maxVerified - 3) + "...")
+                                    : null;
+                                message = verifiedSection ? verifiedSection + " | " + unverifiedStr : unverifiedStr;
                             }
 
                             Office.context.mailbox.item.notificationMessages.replaceAsync(

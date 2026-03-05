@@ -45,9 +45,10 @@ function checkRecipients() {
                         } else {
                             recipients.forEach(function(recipient) {
                                 const email = recipient.emailAddress.toLowerCase();
+                                const username = email.split('@')[0];
 
                                 if (emailData[email]) {
-                                    verifiedParts.push(email + ": " + emailData[email].join(", "));
+                                    verifiedParts.push(username + ": " + emailData[email].join(", "));
                                 } else {
                                     invalidEmails.push(email);
                                 }
@@ -55,17 +56,22 @@ function checkRecipients() {
 
                             var messageParts = [];
                             if (verifiedParts.length > 0) {
-                                messageParts.push(verifiedParts.join("\n"));
+                                messageParts.push("✅ " + verifiedParts.join(" | "));
                             }
                             if (invalidEmails.length > 0) {
-                                messageParts.push("⚠️ Unverified recipients: " + invalidEmails.join(", "));
+                                messageParts.push("⚠️ Unverified: " + invalidEmails.join(", "));
+                            }
+
+                            var message = messageParts.join(" | ");
+                            if (message.length > 150) {
+                                message = message.substring(0, 147) + "...";
                             }
 
                             Office.context.mailbox.item.notificationMessages.replaceAsync(
                                 NOTIFICATION_KEY,
                                 {
                                     type: "informationalMessage",
-                                    message: messageParts.join("\n"),
+                                    message: message,
                                     icon: "icon1",
                                     persistent: false
                                 }

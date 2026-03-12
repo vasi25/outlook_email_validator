@@ -32,7 +32,15 @@ function checkRecipients() {
     try {
         fetch('https://vasilocaladdin:3000/api/email/list')
             .then(response => response.json())
-            .then(emailData => {
+            .then(rows => {
+                // Convert array format to grouped object: { email: [clients] }
+                const emailData = {};
+                rows.forEach(function(row) {
+                    const e = row.email.toLowerCase();
+                    if (!emailData[e]) emailData[e] = [];
+                    emailData[e].push(row.client);
+                });
+
                 // Get recipients from "To" field
                 Office.context.mailbox.item.to.getAsync(function(result) {
                     if (result.status === Office.AsyncResultStatus.Succeeded) {

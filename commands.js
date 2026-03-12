@@ -32,7 +32,8 @@ function checkRecipients() {
     try {
         fetch('https://vasilocaladdin:3000/api/email/list')
             .then(response => response.json())
-            .then(rows => {
+            .then(response => {
+                const rows = response.dataTable || response;
                 // Convert array format to grouped object: { email: [clients] }
                 const emailData = {};
                 rows.forEach(function(row) {

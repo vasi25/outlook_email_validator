@@ -34,6 +34,7 @@ function checkRecipients() {
             .then(response => response.json())
             .then(response => {
                 const rows = response.dataTable || response;
+                if (!Array.isArray(rows)) return; // skip on API error
                 // Convert array format to grouped object: { email: [clients] }
                 const emailData = {};
                 rows.forEach(function(row) {

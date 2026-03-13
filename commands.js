@@ -11,96 +11,97 @@ function onMessageComposeHandler(event) {
 }
 
 let validationInterval;
+let lastRecipientList = "";
 
 function startAutoValidation() {
     // Start checking immediately
-    checkRecipients();
-    
+    pollRecipients();
+
     // Then check every 2 seconds
     if (validationInterval) {
         clearInterval(validationInterval);
     }
-    
-    validationInterval = setInterval(function() {
-        checkRecipients();
-    }, 2000);
+
+    validationInterval = setInterval(pollRecipients, 2000);
 }
 
-function checkRecipients() {
+function pollRecipients() {
+    Office.context.mailbox.item.to.getAsync(function(result) {
+        if (result.status !== Office.AsyncResultStatus.Succeeded) return;
+        const key = result.value.map(r => r.emailAddress.toLowerCase()).sort().join(",");
+        if (key === lastRecipientList) return;
+        lastRecipientList = key;
+        checkRecipients(result.value);
+    });
+}
+
+function checkRecipients(recipients) {
     const NOTIFICATION_KEY = "emailValidatorWarning";
 
-    try {
-        fetch('https://vasibot:3443/api/email/list-v2')
-            .then(response => response.json())
-            .then(response => {
-                const rows = response.dataTable || response;
-                if (!Array.isArray(rows)) return; // skip on API error
-                // Convert array format to grouped object: { email: [clients] }
-                const emailData = {};
-                rows.forEach(function(row) {
-                    const e = row.email.toLowerCase();
-                    if (!emailData[e]) emailData[e] = [];
-                    emailData[e].push(row.client);
-                });
-
-                // Get recipients from "To" field
-                Office.context.mailbox.item.to.getAsync(function(result) {
-                    if (result.status === Office.AsyncResultStatus.Succeeded) {
-                        const recipients = result.value;
-                        let verifiedParts = [];
-                        let invalidEmails = [];
-
-                        if (recipients.length === 0) {
-                            removeNotification(NOTIFICATION_KEY);
-                        } else {
-                            recipients.forEach(function(recipient) {
-                                const email = recipient.emailAddress.toLowerCase();
-                                const username = email.split('@')[0];
-
-                                if (emailData[email]) {
-                                    verifiedParts.push(username + ": " + emailData[email].join(", "));
-                                } else {
-                                    invalidEmails.push(email);
-                                }
-                            });
-
-                            var unverifiedStr = invalidEmails.length > 0 ? "⚠️ Unverified: " + invalidEmails.join(", ") : "";
-                            var message;
-
-                            if (verifiedParts.length === 0) {
-                                message = unverifiedStr;
-                            } else if (!unverifiedStr) {
-                                var full = "✅ " + verifiedParts.join(" | ");
-                                message = full.length > 150 ? full.substring(0, 147) + "..." : full;
-                            } else {
-                                // Unverified has priority — fit verified in remaining space
-                                var maxVerified = 150 - unverifiedStr.length - 3; // 3 for " | "
-                                var verifiedFull = "✅ " + verifiedParts.join(" | ");
-                                var verifiedSection = maxVerified > 0
-                                    ? (verifiedFull.length <= maxVerified ? verifiedFull : verifiedFull.substring(0, maxVerified - 3) + "...")
-                                    : null;
-                                message = verifiedSection ? verifiedSection + " | " + unverifiedStr : unverifiedStr;
-                            }
-
-                            Office.context.mailbox.item.notificationMessages.replaceAsync(
-                                NOTIFICATION_KEY,
-                                {
-                                    type: "informationalMessage",
-                                    message: message,
-                                    icon: "icon1",
-                                    persistent: false
-                                }
-                            );
-                        }
-                    }
-                });
-            })
-            .catch(error => {
-                console.error('Failed to fetch valid emails:', error);
-            });
-    } catch (error) {
-        console.error('Validation error:', error);
+    if (recipients.length === 0) {
+        removeNotification(NOTIFICATION_KEY);
+        return;
     }
+
+    fetch('https://vasibot:3443/api/email/list-v2')
+        .then(response => response.json())
+        .then(response => {
+            const rows = response.dataTable || response;
+            if (!Array.isArray(rows)) return; // skip on API error
+
+            // Convert array format to grouped object: { email: [clients] }
+            const emailData = {};
+            rows.forEach(function(row) {
+                const e = row.email.toLowerCase();
+                if (!emailData[e]) emailData[e] = [];
+                emailData[e].push(row.client);
+            });
+
+            let verifiedParts = [];
+            let invalidEmails = [];
+
+            recipients.forEach(function(recipient) {
+                const email = recipient.emailAddress.toLowerCase();
+                const username = email.split('@')[0];
+
+                if (emailData[email]) {
+                    verifiedParts.push(username + ": " + emailData[email].join(", "));
+                } else {
+                    invalidEmails.push(email);
+                }
+            });
+
+            var unverifiedStr = invalidEmails.length > 0 ? "⚠️ Unverified: " + invalidEmails.join(", ") : "";
+            var message;
+
+            if (verifiedParts.length === 0) {
+                message = unverifiedStr;
+            } else if (!unverifiedStr) {
+                var full = "✅ " + verifiedParts.join(" | ");
+                message = full.length > 150 ? full.substring(0, 147) + "..." : full;
+            } else {
+                // Unverified has priority — fit verified in remaining space
+                var maxVerified = 150 - unverifiedStr.length - 3; // 3 for " | "
+                var verifiedFull = "✅ " + verifiedParts.join(" | ");
+                var verifiedSection = maxVerified > 0
+                    ? (verifiedFull.length <= maxVerified ? verifiedFull : verifiedFull.substring(0, maxVerified - 3) + "...")
+                    : null;
+                message = verifiedSection ? verifiedSection + " | " + unverifiedStr : unverifiedStr;
+            }
+
+            Office.context.mailbox.item.notificationMessages.replaceAsync(
+                NOTIFICATION_KEY,
+                {
+                    type: "informationalMessage",
+                    message: message,
+                    icon: "icon1",
+                    persistent: false
+                }
+            );
+        })
+        .catch(error => {
+            console.error('Failed to fetch valid emails:', error);
+        });
 }
 
 function removeNotification(key) {

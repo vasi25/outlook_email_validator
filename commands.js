@@ -30,7 +30,7 @@ function checkRecipients() {
     const NOTIFICATION_KEY = "emailValidatorWarning";
 
     try {
-        fetch('https://vasilocaladdin:3000/api/email/list')
+        fetch('http://localhost:3001/api/email/list-v2')
             .then(response => response.json())
             .then(response => {
                 const rows = response.dataTable || response;

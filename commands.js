@@ -16,7 +16,7 @@ let emailData = null; // cached email list
 
 function startAutoValidation() {
     // Fetch the email list once, then start polling recipients
-    fetch('http://localhost:3001/api/email/list-v2')
+    fetch('https://addin.impuls-leasing.local/api/email/list-v2')
         .then(response => response.json())
         .then(response => {
             const rows = response.dataTable || response;

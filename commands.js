@@ -61,7 +61,7 @@ function checkRecipients(recipients) {
         if (emailData[email]) {
             verifiedParts.push(username + ": " + emailData[email].join(", "));
         } else {
-            invalidEmails.push(email);
+            invalidEmails.push(username);
         }
     });
 

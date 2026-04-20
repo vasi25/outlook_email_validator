@@ -11,7 +11,6 @@ function onMessageComposeHandler(event) {
 }
 
 let emailData = null;
-let lastRecipientList = "";
 
 function startAutoValidation() {
     fetch('https://addin.impuls-leasing.local/api/email/list-v2')
@@ -38,15 +37,8 @@ function startAutoValidation() {
 
 function pollRecipients() {
     Office.context.mailbox.item.to.getAsync(function(result) {
-        console.log('poll status:', result.status, 'count:', result.value && result.value.length);
         if (result.status !== Office.AsyncResultStatus.Succeeded) return;
-        result.value.forEach(function(r) {
-            console.log('recipient:', JSON.stringify({email: r.emailAddress, display: r.displayName, type: r.recipientType}));
-        });
         const resolved = result.value.filter(r => r.emailAddress);
-        const key = resolved.map(r => r.emailAddress.toLowerCase()).sort().join(",");
-        if (key === lastRecipientList) return;
-        lastRecipientList = key;
         checkRecipients(resolved);
     });
 }

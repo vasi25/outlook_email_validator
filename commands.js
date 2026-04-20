@@ -90,6 +90,7 @@ function checkRecipients(recipients) {
         message = verifiedSection ? verifiedSection + " | " + unverifiedStr : unverifiedStr;
     }
 
+    console.log('Setting banner:', message);
     Office.context.mailbox.item.notificationMessages.replaceAsync(
         NOTIFICATION_KEY,
         {
@@ -97,7 +98,8 @@ function checkRecipients(recipients) {
             message: message,
             icon: "icon1",
             persistent: false
-        }
+        },
+        function(r) { console.log('replaceAsync:', r.status, r.error && r.error.message); }
     );
 }
 

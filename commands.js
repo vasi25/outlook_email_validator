@@ -26,6 +26,7 @@ function startAutoValidation() {
                 if (!emailData[e]) emailData[e] = [];
                 emailData[e].push(row.client);
             });
+            console.log('emailData loaded, size:', Object.keys(emailData).length);
 
             pollRecipients();
             setInterval(pollRecipients, 2000);
@@ -37,6 +38,7 @@ function startAutoValidation() {
 
 function pollRecipients() {
     Office.context.mailbox.item.to.getAsync(function(result) {
+        console.log('poll status:', result.status, 'count:', result.value && result.value.length);
         if (result.status !== Office.AsyncResultStatus.Succeeded) return;
         const resolved = result.value.filter(r => r.emailAddress);
         const key = resolved.map(r => r.emailAddress.toLowerCase()).sort().join(",");

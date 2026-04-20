@@ -10,7 +10,8 @@ function onMessageComposeHandler(event) {
     event.completed();
 }
 
-let emailData = null; // cached email list
+let emailData = null;
+let lastRecipientList = "";
 
 function startAutoValidation() {
     fetch('https://addin.impuls-leasing.local/api/email/list-v2')
@@ -26,24 +27,21 @@ function startAutoValidation() {
                 emailData[e].push(row.client);
             });
 
-            // Check current recipients immediately
-            checkCurrentRecipients();
-
-            // Then fire on every recipient change
-            Office.context.mailbox.item.addHandlerAsync(
-                Office.EventType.RecipientsChanged,
-                function() { checkCurrentRecipients(); }
-            );
+            pollRecipients();
+            setInterval(pollRecipients, 2000);
         })
         .catch(error => {
             console.error('Failed to fetch valid emails:', error);
         });
 }
 
-function checkCurrentRecipients() {
+function pollRecipients() {
     Office.context.mailbox.item.to.getAsync(function(result) {
         if (result.status !== Office.AsyncResultStatus.Succeeded) return;
         const resolved = result.value.filter(r => r.emailAddress);
+        const key = resolved.map(r => r.emailAddress.toLowerCase()).sort().join(",");
+        if (key === lastRecipientList) return;
+        lastRecipientList = key;
         checkRecipients(resolved);
     });
 }

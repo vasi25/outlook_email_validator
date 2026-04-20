@@ -10,19 +10,15 @@ function onMessageComposeHandler(event) {
     event.completed();
 }
 
-let validationInterval;
-let lastRecipientList = "";
 let emailData = null; // cached email list
 
 function startAutoValidation() {
-    // Fetch the email list once, then start polling recipients
     fetch('https://addin.impuls-leasing.local/api/email/list-v2')
         .then(response => response.json())
         .then(response => {
             const rows = response.dataTable || response;
             if (!Array.isArray(rows)) return;
 
-            // Build lookup: { email: [clients] }
             emailData = {};
             rows.forEach(function(row) {
                 const e = row.email.toLowerCase();
@@ -30,25 +26,25 @@ function startAutoValidation() {
                 emailData[e].push(row.client);
             });
 
-            // Start polling recipients now that we have the list
-            pollRecipients();
-            if (validationInterval) clearInterval(validationInterval);
-            validationInterval = setInterval(pollRecipients, 2000);
+            // Check current recipients immediately
+            checkCurrentRecipients();
+
+            // Then fire on every recipient change
+            Office.context.mailbox.item.addHandlerAsync(
+                Office.EventType.RecipientsChanged,
+                function() { checkCurrentRecipients(); }
+            );
         })
         .catch(error => {
             console.error('Failed to fetch valid emails:', error);
         });
 }
 
-function pollRecipients() {
-    if (!emailData) return;
-
+function checkCurrentRecipients() {
     Office.context.mailbox.item.to.getAsync(function(result) {
         if (result.status !== Office.AsyncResultStatus.Succeeded) return;
-        const key = result.value.map(r => r.emailAddress.toLowerCase()).sort().join(",");
-        if (key === lastRecipientList) return;
-        lastRecipientList = key;
-        checkRecipients(result.value);
+        const resolved = result.value.filter(r => r.emailAddress);
+        checkRecipients(resolved);
     });
 }
 

@@ -65,7 +65,7 @@ function checkRecipients(recipients) {
         }
     });
 
-    var unverifiedStr = invalidEmails.length > 0 ? "⚠️ Unverified: " + invalidEmails.join(", ") : "";
+    var unverifiedStr = invalidEmails.length > 0 ? "⚠️ Unverified: " + invalidEmails.join(" | ") : "";
     var message;
 
     if (verifiedParts.length === 0) {

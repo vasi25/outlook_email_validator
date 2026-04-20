@@ -3,7 +3,6 @@ Office.onReady(function() {
     console.log('Email Validator background service started');
 });
 
-// This function is called automatically when composing a new message
 function onMessageComposeHandler(event) {
     console.log('New message compose detected - starting validation');
     startAutoValidation();
@@ -20,15 +19,25 @@ function startAutoValidation() {
             const rows = response.dataTable || response;
             if (!Array.isArray(rows)) return;
 
+            // Process rows in batches to avoid freezing Outlook
             emailData = {};
-            rows.forEach(function(row) {
-                const e = row.email.toLowerCase();
-                if (!emailData[e]) emailData[e] = [];
-                emailData[e].push(row.client);
-            });
-
-            pollRecipients();
-            setInterval(pollRecipients, 2000);
+            var i = 0;
+            function processBatch() {
+                var end = Math.min(i + 1000, rows.length);
+                for (; i < end; i++) {
+                    var e = rows[i].email.toLowerCase();
+                    if (!emailData[e]) emailData[e] = [];
+                    emailData[e].push(rows[i].client);
+                }
+                if (i < rows.length) {
+                    setTimeout(processBatch, 0);
+                } else {
+                    // All rows processed, start polling
+                    pollRecipients();
+                    setInterval(pollRecipients, 2000);
+                }
+            }
+            processBatch();
         })
         .catch(error => {
             console.error('Failed to fetch valid emails:', error);
@@ -38,10 +47,6 @@ function startAutoValidation() {
 function pollRecipients() {
     Office.context.mailbox.item.to.getAsync(function(result) {
         if (result.status !== Office.AsyncResultStatus.Succeeded) return;
-        var debugMsg = result.value.map(r => '[' + (r.emailAddress || 'EMPTY') + ']').join(' ');
-        Office.context.mailbox.item.notificationMessages.replaceAsync('emailValidatorWarning', {
-            type: 'informationalMessage', message: debugMsg || '(no recipients)', icon: 'icon1', persistent: false
-        });
         const resolved = result.value.filter(r => r.emailAddress);
         const key = resolved.map(r => r.emailAddress.toLowerCase()).sort().join(",");
         if (key === lastRecipientList) return;
@@ -81,8 +86,7 @@ function checkRecipients(recipients) {
         var full = "✅ " + verifiedParts.join(" | ");
         message = full.length > 150 ? full.substring(0, 147) + "..." : full;
     } else {
-        // Unverified has priority — fit verified in remaining space
-        var maxVerified = 150 - unverifiedStr.length - 3; // 3 for " | "
+        var maxVerified = 150 - unverifiedStr.length - 3;
         var verifiedFull = "✅ " + verifiedParts.join(" | ");
         var verifiedSection = maxVerified > 0
             ? (verifiedFull.length <= maxVerified ? verifiedFull : verifiedFull.substring(0, maxVerified - 3) + "...")
@@ -102,10 +106,7 @@ function checkRecipients(recipients) {
 }
 
 function removeNotification(key) {
-    Office.context.mailbox.item.notificationMessages.removeAsync(key, function(asyncResult) {
-        // Ignore errors (notification might not exist)
-    });
+    Office.context.mailbox.item.notificationMessages.removeAsync(key, function(asyncResult) {});
 }
 
-// Register the function for the LaunchEvent
 Office.actions.associate("onMessageComposeHandler", onMessageComposeHandler);

@@ -38,6 +38,10 @@ function startAutoValidation() {
 function pollRecipients() {
     Office.context.mailbox.item.to.getAsync(function(result) {
         if (result.status !== Office.AsyncResultStatus.Succeeded) return;
+        var debugMsg = result.value.map(r => (r.emailAddress || '(empty)') + '/' + (r.displayName || '')).join(' | ');
+        Office.context.mailbox.item.notificationMessages.replaceAsync('debug', {
+            type: 'informationalMessage', message: debugMsg || '(no recipients)', icon: 'icon1', persistent: false
+        });
         const resolved = result.value.filter(r => r.emailAddress);
         const key = resolved.map(r => r.emailAddress.toLowerCase()).sort().join(",");
         if (key === lastRecipientList) return;

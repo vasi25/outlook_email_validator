@@ -32,7 +32,7 @@ function startAutoValidation() {
                 if (i < rows.length) {
                     setTimeout(processBatch, 0);
                 } else {
-                    // All rows processed, start polling
+                    console.log('Batch done, emailData size:', Object.keys(emailData).length);
                     pollRecipients();
                     setInterval(pollRecipients, 2000);
                 }
@@ -46,9 +46,13 @@ function startAutoValidation() {
 
 function pollRecipients() {
     Office.context.mailbox.item.to.getAsync(function(result) {
-        if (result.status !== Office.AsyncResultStatus.Succeeded) return;
+        if (result.status !== Office.AsyncResultStatus.Succeeded) {
+            console.log('to.getAsync failed:', result.error);
+            return;
+        }
         const resolved = result.value.filter(r => r.emailAddress);
         const key = resolved.map(r => r.emailAddress.toLowerCase()).sort().join(",");
+        console.log('poll key:', key, 'last:', lastRecipientList);
         if (key === lastRecipientList) return;
         lastRecipientList = key;
         checkRecipients(resolved);
@@ -94,6 +98,7 @@ function checkRecipients(recipients) {
         message = verifiedSection ? verifiedSection + " | " + unverifiedStr : unverifiedStr;
     }
 
+    console.log('Setting banner:', message);
     Office.context.mailbox.item.notificationMessages.replaceAsync(
         NOTIFICATION_KEY,
         {
@@ -101,7 +106,8 @@ function checkRecipients(recipients) {
             message: message,
             icon: "icon1",
             persistent: false
-        }
+        },
+        function(r) { console.log('replaceAsync result:', r.status, r.error); }
     );
 }
 

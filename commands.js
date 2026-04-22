@@ -126,18 +126,17 @@ function checkRecipients(recipients) {
     }
 
     console.log('[EV] setting banner: "' + message + '"');
-    Office.context.mailbox.item.notificationMessages.replaceAsync(
-        NOTIFICATION_KEY,
-        {
-            type: "informationalMessage",
-            message: message,
-            icon: "Icon.16x16",
-            persistent: false
-        },
-        function(r) {
-            console.log('[EV] replaceAsync status=' + r.status + (r.error ? ' error=' + r.error.message : ''));
-        }
-    );
+    var details = {
+        type: "informationalMessage",
+        message: message,
+        icon: "Icon.16x16",
+        persistent: false
+    };
+    Office.context.mailbox.item.notificationMessages.removeAsync(NOTIFICATION_KEY, function() {
+        Office.context.mailbox.item.notificationMessages.addAsync(NOTIFICATION_KEY, details, function(r) {
+            console.log('[EV] addAsync status=' + r.status + (r.error ? ' error=' + r.error.message : ''));
+        });
+    });
 }
 
 function removeNotification(key) {

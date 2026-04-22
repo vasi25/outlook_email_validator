@@ -1,23 +1,15 @@
 Office.onReady(function() {
-    console.log('[EV] Office.onReady fired');
+    console.log('Email Validator background service started');
 });
 
 let emailData = null;
 let fetchPromise = null;
 let intervalId = null;
-let pollCount = 0;
 
 function loadEmailData() {
-    if (emailData !== null) {
-        console.log('[EV] loadEmailData: already loaded, size=' + Object.keys(emailData).length);
-        return Promise.resolve(emailData);
-    }
-    if (fetchPromise) {
-        console.log('[EV] loadEmailData: fetch already in progress');
-        return fetchPromise;
-    }
+    if (emailData !== null) return Promise.resolve(emailData);
+    if (fetchPromise) return fetchPromise;
 
-    console.log('[EV] loadEmailData: starting fetch');
     fetchPromise = fetch('https://addin.impuls-leasing.local/api/email/list-v2')
         .then(function(response) { return response.json(); })
         .then(function(response) {
@@ -30,12 +22,12 @@ function loadEmailData() {
                     emailData[e].push(row.client);
                 });
             }
-            console.log('[EV] loadEmailData: done, size=' + Object.keys(emailData).length);
+            console.log('emailData loaded, size=' + Object.keys(emailData).length);
             fetchPromise = null;
             return emailData;
         })
         .catch(function(error) {
-            console.error('[EV] loadEmailData: fetch failed', error);
+            console.error('Failed to fetch valid emails:', error);
             fetchPromise = null;
             return Promise.reject(error);
         });
@@ -44,43 +36,23 @@ function loadEmailData() {
 }
 
 function onMessageComposeHandler(event) {
-    console.log('[EV] onMessageComposeHandler called');
     loadEmailData()
         .then(function() {
-            console.log('[EV] data ready, running first poll');
             checkCurrentRecipients();
             if (!intervalId) {
-                console.log('[EV] registering setInterval');
                 intervalId = setInterval(checkCurrentRecipients, 2000);
-                console.log('[EV] intervalId=' + intervalId);
-            } else {
-                console.log('[EV] interval already registered, id=' + intervalId);
             }
-            console.log('[EV] calling event.completed()');
             event.completed();
         })
-        .catch(function(err) {
-            console.error('[EV] error in handler', err);
+        .catch(function() {
             event.completed();
         });
 }
 
 function checkCurrentRecipients() {
-    pollCount++;
-    var thisPoll = pollCount;
-    console.log('[EV] poll #' + thisPoll + ' fired');
     Office.context.mailbox.item.to.getAsync(function(result) {
-        console.log('[EV] poll #' + thisPoll + ' getAsync status=' + result.status);
-        if (result.status !== Office.AsyncResultStatus.Succeeded) {
-            console.error('[EV] poll #' + thisPoll + ' getAsync failed:', result.error && result.error.message);
-            return;
-        }
-        console.log('[EV] poll #' + thisPoll + ' raw recipients count=' + result.value.length);
-        result.value.forEach(function(r, i) {
-            console.log('[EV] poll #' + thisPoll + ' recipient[' + i + '] display="' + r.displayName + '" email="' + r.emailAddress + '"');
-        });
+        if (result.status !== Office.AsyncResultStatus.Succeeded) return;
         var resolved = result.value.filter(function(r) { return r.emailAddress; });
-        console.log('[EV] poll #' + thisPoll + ' resolved count=' + resolved.length);
         checkRecipients(resolved);
     });
 }
@@ -89,7 +61,6 @@ function checkRecipients(recipients) {
     const NOTIFICATION_KEY = "emailValidatorWarning";
 
     if (recipients.length === 0) {
-        console.log('[EV] no recipients, removing notification');
         removeNotification(NOTIFICATION_KEY);
         return;
     }
@@ -125,7 +96,6 @@ function checkRecipients(recipients) {
         message = verifiedSection ? verifiedSection + " | " + unverifiedStr : unverifiedStr;
     }
 
-    console.log('[EV] setting banner: "' + message + '"');
     var details = {
         type: "informationalMessage",
         message: message,
@@ -133,9 +103,7 @@ function checkRecipients(recipients) {
         persistent: false
     };
     Office.context.mailbox.item.notificationMessages.removeAsync(NOTIFICATION_KEY, function() {
-        Office.context.mailbox.item.notificationMessages.addAsync(NOTIFICATION_KEY, details, function(r) {
-            console.log('[EV] addAsync status=' + r.status + (r.error ? ' error=' + r.error.message : ''));
-        });
+        Office.context.mailbox.item.notificationMessages.addAsync(NOTIFICATION_KEY, details);
     });
 }
 

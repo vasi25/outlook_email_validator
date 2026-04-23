@@ -4,8 +4,7 @@ Office.onReady(function() {
 
 let emailData = null;
 let fetchPromise = null;
-let handlerRegistered = false;
-let fallbackIntervalId = null;
+let intervalId = null;
 let lastBannerMessage = null;
 
 function loadEmailData() {
@@ -41,21 +40,8 @@ function onMessageComposeHandler(event) {
     loadEmailData()
         .then(function() {
             checkCurrentRecipients();
-            if (!handlerRegistered) {
-                Office.context.mailbox.item.addHandlerAsync(
-                    Office.EventType.RecipientsChanged,
-                    function() { checkCurrentRecipients(); },
-                    function(result) {
-                        if (result.status === Office.AsyncResultStatus.Succeeded) {
-                            handlerRegistered = true;
-                        } else {
-                            console.error('addHandlerAsync failed, falling back to poll:', result.error);
-                            if (!fallbackIntervalId) {
-                                fallbackIntervalId = setInterval(checkCurrentRecipients, 10000);
-                            }
-                        }
-                    }
-                );
+            if (!intervalId) {
+                intervalId = setInterval(checkCurrentRecipients, 2000);
             }
             event.completed();
         })
@@ -76,8 +62,6 @@ function checkRecipients(recipients) {
     const NOTIFICATION_KEY = "emailValidatorWarning";
 
     if (recipients.length === 0) {
-        if (lastBannerMessage === null) return;
-        lastBannerMessage = null;
         removeNotification(NOTIFICATION_KEY);
         return;
     }

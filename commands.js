@@ -5,6 +5,7 @@ Office.onReady(function() {
 let emailData = null;
 let fetchPromise = null;
 let handlerRegistered = false;
+let fallbackIntervalId = null;
 let lastBannerMessage = null;
 
 function loadEmailData() {
@@ -48,7 +49,10 @@ function onMessageComposeHandler(event) {
                         if (result.status === Office.AsyncResultStatus.Succeeded) {
                             handlerRegistered = true;
                         } else {
-                            console.error('addHandlerAsync failed:', result.error);
+                            console.error('addHandlerAsync failed, falling back to poll:', result.error);
+                            if (!fallbackIntervalId) {
+                                fallbackIntervalId = setInterval(checkCurrentRecipients, 10000);
+                            }
                         }
                     }
                 );
@@ -112,15 +116,15 @@ function checkRecipients(recipients) {
     if (message === lastBannerMessage) return;
     lastBannerMessage = message;
 
-    Office.context.mailbox.item.notificationMessages.replaceAsync(
-        NOTIFICATION_KEY,
-        {
-            type: "informationalMessage",
-            message: message,
-            icon: "Icon.16x16",
-            persistent: false
-        }
-    );
+    var details = {
+        type: "informationalMessage",
+        message: message,
+        icon: "Icon.16x16",
+        persistent: false
+    };
+    Office.context.mailbox.item.notificationMessages.removeAsync(NOTIFICATION_KEY, function() {
+        Office.context.mailbox.item.notificationMessages.addAsync(NOTIFICATION_KEY, details);
+    });
 }
 
 function removeNotification(key) {

@@ -4,7 +4,7 @@ Office.onReady(function() {
 
 let emailData = null;
 let fetchPromise = null;
-let intervalId = null;
+let handlerRegistered = false;
 let lastBannerMessage = null;
 
 function loadEmailData() {
@@ -40,8 +40,18 @@ function onMessageComposeHandler(event) {
     loadEmailData()
         .then(function() {
             checkCurrentRecipients();
-            if (!intervalId) {
-                intervalId = setInterval(checkCurrentRecipients, 2000);
+            if (!handlerRegistered) {
+                Office.context.mailbox.item.addHandlerAsync(
+                    Office.EventType.RecipientsChanged,
+                    function() { checkCurrentRecipients(); },
+                    function(result) {
+                        if (result.status === Office.AsyncResultStatus.Succeeded) {
+                            handlerRegistered = true;
+                        } else {
+                            console.error('addHandlerAsync failed:', result.error);
+                        }
+                    }
+                );
             }
             event.completed();
         })
@@ -62,6 +72,8 @@ function checkRecipients(recipients) {
     const NOTIFICATION_KEY = "emailValidatorWarning";
 
     if (recipients.length === 0) {
+        if (lastBannerMessage === null) return;
+        lastBannerMessage = null;
         removeNotification(NOTIFICATION_KEY);
         return;
     }
@@ -100,15 +112,15 @@ function checkRecipients(recipients) {
     if (message === lastBannerMessage) return;
     lastBannerMessage = message;
 
-    var details = {
-        type: "informationalMessage",
-        message: message,
-        icon: "Icon.16x16",
-        persistent: false
-    };
-    Office.context.mailbox.item.notificationMessages.removeAsync(NOTIFICATION_KEY, function() {
-        Office.context.mailbox.item.notificationMessages.addAsync(NOTIFICATION_KEY, details);
-    });
+    Office.context.mailbox.item.notificationMessages.replaceAsync(
+        NOTIFICATION_KEY,
+        {
+            type: "informationalMessage",
+            message: message,
+            icon: "Icon.16x16",
+            persistent: false
+        }
+    );
 }
 
 function removeNotification(key) {

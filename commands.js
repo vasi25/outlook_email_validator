@@ -5,6 +5,7 @@ Office.onReady(function() {
 let emailData = null;
 let fetchPromise = null;
 let intervalId = null;
+let lastBannerMessage = null;
 
 function loadEmailData() {
     if (emailData !== null) return Promise.resolve(emailData);
@@ -95,6 +96,9 @@ function checkRecipients(recipients) {
             : null;
         message = verifiedSection ? verifiedSection + " | " + unverifiedStr : unverifiedStr;
     }
+
+    if (message === lastBannerMessage) return;
+    lastBannerMessage = message;
 
     var details = {
         type: "informationalMessage",
